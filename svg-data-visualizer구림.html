@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive SVG Data Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 2px solid #e9ecef;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        .control-section {
+            margin-bottom: 30px;
+        }
+
+        .control-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-section h3::before {
+            content: '▶';
+            color: #667eea;
+            font-size: 0.8em;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        select, input[type="file"], input[type="color"], input[type="number"], input[type="range"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            font-family: 'Courier New', monospace;
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .sample-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sample-buttons button {
+            font-size: 13px;
+            padding: 8px;
+        }
+
+        .visualization-area {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        }
+
+        #svgCanvas {
+            width: 100%;
+            max-width: 900px;
+            height: 500px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            background: white;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .action-buttons button {
+            width: auto;
+            padding: 12px 30px;
+        }
+
+        .range-group {
+            margin-bottom: 15px;
+        }
+
+        .range-value {
+            display: inline-block;
+            float: right;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .color-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .color-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .color-input-group input[type="color"] {
+            height: 40px;
+            cursor: pointer;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.85em;
+            color: #495057;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .control-panel {
+                max-height: none;
+                border-right: none;
+                border-bottom: 2px solid #e9ecef;
+            }
+        }
+
+        .chart-preview {
+            text-align: center;
+            margin-top: 10px;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        /* Animation for chart appearance */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .visualization-area.active {
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Interactive SVG Data Visualizer</h1>
+            <p>데이터를 아름다운 SVG 차트로 변환하세요</p>
+        </header>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <div class="control-section">
+                    <h3>차트 타입</h3>
+                    <select id="chartType">
+                        <option value="bar">Bar Chart (막대 차트)</option>
+                        <option value="line">Line Chart (선 차트)</option>
+                        <option value="pie">Pie Chart (파이 차트)</option>
+                        <option value="scatter">Scatter Plot (산점도)</option>
+                        <option value="area">Area Chart (영역 차트)</option>
+                        <option value="donut">Donut Chart (도넛 차트)</option>
+                        <option value="radar">Radar Chart (레이더 차트)</option>
+                    </select>
+                </div>
+
+                <div class="control-section">
+                    <h3>샘플 데이터</h3>
+                    <div class="sample-buttons">
+                        <button onclick="loadSample('sales')">매출 데이터</button>
+                        <button onclick="loadSample('temperature')">온도 데이터</button>
+                        <button onclick="loadSample('population')">인구 통계</button>
+                        <button onclick="loadSample('performance')">성능 지표</button>
+                        <button onclick="loadSample('expenses')">지출 분석</button>
+                        <button onclick="loadSample('growth')">성장률</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>데이터 입력</h3>
+                    <label>JSON/CSV 데이터</label>
+                    <textarea id="dataInput" placeholder='{"labels": ["A", "B", "C"], "values": [10, 20, 15]}'></textarea>
+                    <button onclick="generateChart()">차트 생성</button>
+                </div>
+
+                <div class="control-section">
+                    <h3>스타일 설정</h3>
+                    
+                    <div class="color-inputs">
+                        <div class="color-input-group">
+                            <label>주요 색상</label>
+                            <input type="color" id="primaryColor" value="#667eea">
+                        </div>
+                        <div class="color-input-group">
+                            <label>보조 색상</label>
+                            <input type="color" id="secondaryColor" value="#764ba2">
+                        </div>
+                    </div>
+
+                    <div class="range-group">
+                        <label>애니메이션 속도 <span class="range-value" id="animSpeedValue">1000ms</span></label>
+                        <input type="range" id="animSpeed" min="200" max="3000" value="1000" step="100">
+                    </div>
+
+                    <div class="range-group">
+                        <label>차트 패딩 <span class="range-value" id="paddingValue">40px</span></label>
+                        <input type="range" id="padding" min="20" max="80" value="40" step="5">
+                    </div>
+
+                    <label>
+                        <input type="checkbox" id="showLabels" checked> 레이블 표시
+                    </label>
+                    <label>
+                        <input type="checkbox" id="showGrid" checked> 그리드 표시
+                    </label>
+                    <label>
+                        <input type="checkbox" id="enableAnimation" checked> 애니메이션 활성화
+                    </label>
+                </div>
+
+                <div class="info-box">
+                    💡 <strong>팁:</strong> 샘플 데이터를 선택하고 차트 타입을 변경하여 다양한 시각화를 경험해보세요. 생성된 SVG는 다운로드하여 웹사이트나 문서에 바로 사용할 수 있습니다.
+                </div>
+            </div>
+
+            <div class="visualization-area">
+                <svg id="svgCanvas" xmlns="http://www.w3.org/2000/svg">
+                    <text x="50%" y="50%" text-anchor="middle" fill="#adb5bd" font-size="18">
+                        샘플 데이터를 선택하거나 데이터를 입력한 후 '차트 생성' 버튼을 클릭하세요
+                    </text>
+                </svg>
+                
+                <div class="action-buttons">
+                    <button onclick="downloadSVG()">📥 SVG 다운로드</button>
+                    <button onclick="copyToClipboard()">📋 코드 복사</button>
+                    <button onclick="regenerateChart()">🔄 새로고침</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Sample data sets
+        const samples = {
+            sales: {
+                labels: ['1월', '2월', '3월', '4월', '5월', '6월'],
+                values: [45000, 52000, 48000, 61000, 58000, 67000],
+                title: '월별 매출 현황'
+            },
+            temperature: {
+                labels: ['월', '화', '수', '목', '금', '토', '일'],
+                values: [22, 24, 23, 25, 27, 26, 24],
+                title: '주간 평균 기온 (°C)'
+            },
+            population: {
+                labels: ['서울', '부산', '인천', '대구', '대전', '광주'],
+                values: [9.7, 3.4, 2.9, 2.4, 1.5, 1.4],
+                title: '주요 도시 인구 (백만 명)'
+            },
+            performance: {
+                labels: ['성능', '보안', '호환성', '사용성', '안정성'],
+                values: [85, 92, 78, 88, 90],
+                title: '시스템 성능 지표'
+            },
+            expenses: {
+                labels: ['식비', '교통비', '주거비', '통신비', '여가'],
+                values: [350000, 120000, 800000, 80000, 150000],
+                title: '월간 지출 분석'
+            },
+            growth: {
+                labels: ['2019', '2020', '2021', '2022', '2023', '2024'],
+                values: [5.2, 3.8, 7.5, 8.9, 10.2, 12.5],
+                title: '연간 성장률 (%)'
+            }
+        };
+
+        let currentData = null;
+
+        // Load sample data
+        function loadSample(sampleName) {
+            const sample = samples[sampleName];
+            const dataObj = {
+                labels: sample.labels,
+                values: sample.values,
+                title: sample.title
+            };
+            document.getElementById('dataInput').value = JSON.stringify(dataObj, null, 2);
+            generateChart();
+        }
+
+        // Update range value displays
+        document.getElementById('animSpeed').addEventListener('input', function() {
+            document.getElementById('animSpeedValue').textContent = this.value + 'ms';
+        });
+
+        document.getElementById('padding').addEventListener('input', function() {
+            document.getElementById('paddingValue').textContent = this.value + 'px';
+        });
+
+        // Parse data input
+        function parseData() {
+            try {
+                const input = document.getElementById('dataInput').value.trim();
+                if (!input) return null;
+
+                // Try JSON first
+                try {
+                    return JSON.parse(input);
+                } catch (e) {
+                    // Try CSV
+                    const lines = input.split('\n').filter(line => line.trim());
+                    if (lines.length < 2) throw new Error('Invalid CSV format');
+                    
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    const values = lines[1].split(',').map(v => parseFloat(v.trim()));
+                    
+                    return {
+                        labels: headers,
+                        values: values,
+                        title: 'Data Visualization'
+                    };
+                }
+            } catch (error) {
+                alert('데이터 파싱 오류: ' + error.message);
+                return null;
+            }
+        }
+
+        // Generate chart
+        function generateChart() {
+            currentData = parseData();
+            if (!currentData) return;
+
+            const chartType = document.getElementById('chartType').value;
+            const svg = document.getElementById('svgCanvas');
+            
+            // Clear SVG
+            svg.innerHTML = '';
+
+            // Get settings
+            const primaryColor = document.getElementById('primaryColor').value;
+            const secondaryColor = document.getElementById('secondaryColor').value;
+            const animSpeed = parseInt(document.getElementById('animSpeed').value);
+            const padding = parseInt(document.getElementById('padding').value);
+            const showLabels = document.getElementById('showLabels').checked;
+            const showGrid = document.getElementById('showGrid').checked;
+            const enableAnimation = document.getElementById('enableAnimation').checked;
+
+            const config = {
+                primaryColor,
+                secondaryColor,
+                animSpeed,
+                padding,
+                showLabels,
+                showGrid,
+                enableAnimation
+            };
+
+            // Render based on chart type
+            switch(chartType) {
+                case 'bar':
+                    renderBarChart(svg, currentData, config);
+                    break;
+                case 'line':
+                    renderLineChart(svg, currentData, config);
+                    break;
+                case 'pie':
+                    renderPieChart(svg, currentData, config);
+                    break;
+                case 'scatter':
+                    renderScatterPlot(svg, currentData, config);
+                    break;
+                case 'area':
+                    renderAreaChart(svg, currentData, config);
+                    break;
+                case 'donut':
+                    renderDonutChart(svg, currentData, config);
+                    break;
+                case 'radar':
+                    renderRadarChart(svg, currentData, config);
+                    break;
+            }
+
+            document.querySelector('.visualization-area').classList.add('active');
+        }
+
+        // Bar Chart
+        function renderBarChart(svg, data, config) {
+            const width = 900;
+            const height = 500;
+            const { padding, primaryColor, secondaryColor, animSpeed, showLabels, showGrid, enableAnimation } = config;
+
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+            const barWidth = chartWidth / data.labels.length * 0.7;
+            const spacing = chartWidth / data.labels.length;
+            const maxValue = Math.max(...data.values);
+
+            // Background
+            const rect = createSVGElement('rect', {
+                width, height, fill: '#ffffff'
+            });
+            svg.appendChild(rect);
+
+            // Title
+            if (data.title) {
+                const title = createSVGElement('text', {
+                    x: width / 2,
+                    y: padding / 2,
+                    'text-anchor': 'middle',
+                    'font-size': '20',
+                    'font-weight': 'bold',
+                    fill: '#495057'
+                });
+                title.textContent = data.title;
+                svg.appendChild(title);
+            }
+
+            // Grid
+            if (showGrid) {
+                const gridGroup = createSVGElement('g', { class: 'grid' });
+                for (let i = 0; i <= 5; i++) {
+                    const y = padding + (chartHeight / 5) * i;
+                    const line = createSVGElement('line', {
+                        x1: padding,
+                        y1: y,
+                        x2: width - padding,
+                        y2: y,
+                        stroke: '#e9ecef',
+                        'stroke-width': '1'
+                    });
+                    gridGroup.appendChild(line);
+
+                    const value = maxValue * (1 - i / 5);
+                    const label = createSVGElement('text', {
+                        x: padding - 10,
+                        y: y + 5,
+                        'text-anchor': 'end',
+                        'font-size': '12',
+                        fill: '#6c757d'
+                    });
+                    label.textContent = Math.round(value);
+                    gridGroup.appendChild(label);
+                }
+                svg.appendChild(gridGroup);
+            }
+
+            // Bars
+            data.values.forEach((value, i) => {
+                const barHeight = (value / maxValue) * chartHeight;
+                const x = padding + i * spacing + (spacing - barWidth) / 2;
+                const y = padding + chartHeight - barHeight;
+
+                const gradient = createSVGElement('linearGradient', {
+                    id: `grad${i}`,
+                    x1: '0%',
+                    y1: '0%',
+                    x2: '0%',
+                    y2: '100%'
+                });
+                const stop1 = createSVGElement('stop', {
+                    offset: '0%',
+                    style: `stop-color:${primaryColor};stop-opacity:1`
+                });
+                const stop2 = createSVGElement('stop', {
+                    offset: '100%',
+                    style: `stop-color:${secondaryColor};stop-opacity:1`
+                });
+                gradient.appendChild(stop1);
+                gradient.appendChild(stop2);
+                svg.appendChild(gradient);
+
+                const bar = createSVGElement('rect', {
+                    x,
+                    y: enableAnimation ? padding + chartHeight : y,
+                    width: barWidth,
+                    height: enableAnimation ? 0 : barHeight,
+                    fill: `url(#grad${i})`,
+                    rx: '4',
+                    class: 'bar'
+                });
+
+                if (enableAnimation) {
+                    const animate = createSVGElement('animate', {
+                        attributeName: 'height',
+                        from: '0',
+                        to: barHeight,
+                        dur: `${animSpeed}ms`,
+                        fill: 'freeze'
+                    });
+                    bar.appendChild(animate);
+
+                    const animateY = createSVGElement('animate', {
+                        attributeName: 'y',
+                        from: padding + chartHeight,
+                        to: y,
+                        dur: `${animSpeed}ms`,
+                        fill: 'freeze'
+                    });
+                    bar.appendChild(animateY);
+                }
+
+                bar.addEventListener('mouseenter', (e) => showTooltip(e, `${data.labels[i]}: ${value}`));
+                bar.addEventListener('mouseleave', hideTooltip);
+
+                svg.appendChild(bar);
+
+                // Labels
+                if (showLabels) {
+                    const label = createSVGElement('text', {
+                        x: x + barWidth / 2,
+                        y: padding + chartHeight + 20,
+                        'text-anchor': 'middle',
+                        'font-size': '12',
+                        fill: '#495057'
+                    });
+                    label.textContent = data.labels[i];
+                    svg.appendChild(label);
+
+                    const valueLabel = createSVGElement('text', {
+                        x: x + barWidth / 2,
+                        y: y - 5,
+                        'text-anchor': 'middle',
+                        'font-size': '11',
+                        'font-weight': 'bold',
+                        fill: primaryColor
+                    });
+                    valueLabel.textContent = value;
+                    
+                    if (enableAnimation) {
+                        valueLabel.style.opacity = '0';
+                        setTimeout(() => {
+                            valueLabel.style.opacity = '1';
+                            valueLabel.style.transition = 'opacity 0.3s';
+                        }, animSpeed);
+                    }
+                    
+                    svg.appendChild(valueLabel);
+                }
+            });
+        }
+
+        // Line Chart
+        function renderLineChart(svg, data, config) {
+            const width = 900;
+            const height = 500;
+            const { padding, primaryColor, animSpeed, showLabels, showGrid, enableAnimation } = config;
+
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+            const maxValue = Math.max(...data.values);
+            const spacing = chartWidth / (data.labels.length - 1);
+
+            // Background
+            svg.appendChild(createSVGElement('rect', { width, height, fill: '#ffffff' }));
+
+            // Title
+            if (data.title) {
+                const title = createSVGElement('text', {
+                    x: width / 2,
+                    y: padding / 2,
+                    'text-anchor': 'middle',
+                    'font-size': '20',
+                    'font-weight': 'bold',
+                    fill: '#495057'
+                });
+                title.textContent = data.title;
+                svg.appendChild(title);
+            }
+
+            // Grid
+            if (showGrid) {
+                for (let i = 0; i <= 5; i++) {
+                    const y = padding + (chartHeight / 5) * i;
+                    svg.appendChild(createSVGElement('line', {
+                        x1: padding, y1: y, x2: width - padding, y2: y,
+                        stroke: '#e9ecef', 'stroke-width': '1'
+                    }));
+                }
+            }
+
+            // Create path
+            let pathData = '';
+            const points = [];
+
+            data.values.forEach((value, i) => {
+                const x = padding + i * spacing;
+                const y = padding + chartHeight - (value / maxValue * chartHeight);
+                points.push({ x, y, value, label: data.labels[i] });
+                
+                if (i === 0) {
+                    pathData += `M ${x} ${y}`;
+                } else {
+                    pathData += ` L ${x} ${y}`;
+                }
+            });
+
+            // Line path
+            const path = createSVGElement('path', {
+                d: pathData,
+                fill: 'none',
+                stroke: primaryColor,
+                'stroke-width': '3',
+                'stroke-linecap': 'round',
+                'stroke-linejoin': 'round'
+            });
+
+            if (enableAnimation) {
+                const length = path.getTotalLength();
+                path.style.strokeDasharray = length;
+                path.style.strokeDashoffset = length;
+                
+                const animate = createSVGElement('animate', {
+                    attributeName: 'stroke-dashoffset',
+                    from: length,
+                    to: '0',
+                    dur: `${animSpeed}ms`,
+                    fill: 'freeze'
+                });
+                path.appendChild(animate);
+            }
+
+            svg.appendChild(path);
+
+            // Points
+            points.forEach((point, i) => {
+                const circle = createSVGElement('circle', {
+                    cx: point.x,
+                    cy: point.y,
+                    r: '5',
+                    fill: primaryColor,
+                    stroke: 'white',
+                    'stroke-width': '2'
+                });
+
+                if (enableAnimation) {
+                    circle.style.opacity = '0';
+                    setTimeout(() => {
+                        circle.style.opacity = '1';
+                        circle.style.transition = 'opacity 0.3s';
+                    }, animSpeed);
+                }
+
+                circle.addEventListener('mouseenter', (e) => showTooltip(e, `${point.label}: ${point.value}`));
+                circle.addEventListener('mouseleave', hideTooltip);
+
+                svg.appendChild(circle);
+
+                if (showLabels) {
+                    const label = createSVGElement('text', {
+                        x: point.x,
+                        y: padding + chartHeight + 20,
+                        'text-anchor': 'middle',
+                        'font-size': '12',
+                        fill: '#495057'
+                    });
+                    label.textContent = point.label;
+                    svg.appendChild(label);
+                }
+            });
+        }
+
+        // Pie Chart
+        function renderPieChart(svg, data, config) {
+            const width = 900;
+            const height = 500;
+            const { primaryColor, secondaryColor, showLabels } = config;
+
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) / 3;
+
+            // Background
+            svg.appendChild(createSVGElement('rect', { width, height, fill: '#ffffff' }));
+
+            // Title
+            if (data.title) {
+                const title = createSVGElement('text', {
+                    x: width / 2,
+                    y: 30,
+                    'text-anchor': 'middle',
+                    'font-size': '20',
+                    'font-weight': 'bold',
+                    fill: '#495057'
+                });
+                title.textContent = data.title;
+                svg.appendChild(title);
+            }
+
+            const total = data.values.reduce((a, b) => a + b, 0);
+            let currentAngle = -Math.PI / 2;
+
+            // Generate colors
+            const colors = generateColorGradient(primaryColor, secondaryColor, data.values.length);
+
+            data.values.forEach((value, i) => {
+                const angle = (value / total) * Math.PI * 2;
+                const endAngle = currentAngle + angle;
+
+                const x1 = centerX + radius * Math.cos(currentAngle);
+                const y1 = centerY + radius * Math.sin(currentAngle);
+                const x2 = centerX + radius * Math.cos(endAngle);
+                const y2 = centerY + radius * Math.sin(endAngle);
+
+                const largeArc = angle > Math.PI ? 1 : 0;
+
+                const pathData = [
+                    `M ${centerX} ${centerY}`,
+                    `L ${x1} ${y1}`,
+                    `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
+                    'Z'
+                ].join(' ');
+
+                const path = createSVGElement('path', {
+                    d: pathData,
+                    fill: colors[i],
+                    stroke: 'white',
+                    'stroke-width': '2'
+                });
+
+                path.addEventListener('mouseenter', (e) => {
+                    path.style.opacity = '0.8';
+                    const percent = ((value / total) * 100).toFixed(1);
+                    showTooltip(e, `${data.labels[i]}: ${value} (${percent}%)`);
+                });
+                path.addEventListener('mouseleave', (e) => {
+                    path.style.opacity = '1';
+                    hideTooltip();
+                });
+
+                svg.appendChild(path);
+
+                // Labels
+                if (showLabels) {
+                    const midAngle = currentAngle + angle / 2;
+                    const labelRadius = radius + 40;
+                    const labelX = centerX + labelRadius * Math.cos(midAngle);
+                    const labelY = centerY + labelRadius * Math.sin(midAngle);
+
+                    const label = createSVGElement('text', {
+                        x: labelX,
+                        y: labelY,
+                        'text-anchor': 'middle',
+                        'font-size': '12',
+                        fill: '#495057',
+                        'font-weight': 'bold'
+                    });
+                    label.textContent = data.labels[i];
+                    svg.appendChild(label);
+                }
+
+                currentAngle = endAngle;
+            });
+        }
+
+        // Scatter Plot
+        function renderScatterPlot(svg, data, config) {
+            const width = 900;
+            const height = 500;
+            const { padding, primaryColor, secondaryColor, showLabels, showGrid } = config;
+
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+            const maxValue = Math.max(...data.values);
+
+            // Background
+            svg.appendChild(createSVGElement('rect', { width, height, fill: '#ffffff' }));
+
+            // Title
+            if (data.title) {
+                const title = createSVGElement('text', {
+                    x: width / 2,
+                    y: padding / 2,
+                    'text-anchor': 'middle',
+                    'font-size': '20',
+                    'font-weight': 'bold',
+                    fill: '#495057'
+                });
+                title.textContent = data.title;
+                svg.appendChild(title);
+            }
+
+            // Grid
+            if (showGrid) {
+                for (let i = 0; i <= 5; i++) {
+                    const y = padding + (chartHeight / 5) * i;
+                    svg.appendChild(createSVGElement('line', {
+                        x1: padding, y1: y, x2: width - padding, y2: y,
+                        stroke: '#e9ecef', 'stroke-width': '1'
+                    }));
+
+                    const x = padding + (chartWidth / 5) * i;
+                    svg.appendChild(createSVGElement('line', {
+                        x1: x, y1: padding, x2: x, y2: height - padding,
+                        stroke: '#e9ecef', 'stroke-width': '1'
+                    }));
+                }
+            }
+
+            // Points
+            const colors = generateColorGradient(primaryColor, secondaryColor, data.values.length);
+            
+            data.values.forEach((value, i) => {
+                const x = padding + (chartWidth / (data.values.length - 1)) * i;
+                const y = padding + chartHeight - (value / maxValue * chartHeight);
+                const size = 5 + (value / maxValue) * 10;
+
+                const circle = createSVGElement('circle', {
+                    cx: x,
+                    cy: y,
+                    r: size,
+                    fill: colors[i],
+                    opacity: '0.7',
+                    stroke: 'white',
+                    'stroke-width': '2'
+                });
+
+                circle.addEventListener('mouseenter', (e) => {
+                    circle.setAttribute('r', size * 1.5);
+                    showTooltip(e, `${data.labels[i]}: ${value}`);
+                });
+                circle.addEventListener('mouseleave', () => {
+                    circle.setAttribute('r', size);
+                    hideTooltip();
+                });
+
+                svg.appendChild(circle);
+
+                if (showLabels && i % 2 === 0) {
+                    const label = createSVGElement('text', {
+                        x: x,
+                        y: height - padding + 20,
+                        'text-anchor': 'middle',
+                        'font-size': '11',
+                        fill: '#495057'
+                    });
+                    label.textContent = data.labels[i];
+                    svg.appendChild(label);
+                }
+            });
+        }
+
+        // Area Chart
+        function renderAreaChart(svg, data, config) {
+            const width = 900;
+            const height = 500;
+            const { padding, primaryColor, animSpeed, showLabels, showGrid, enableAnimation } = config;
+
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+            const maxValue = Math.max(...data.values);
+            const spacing = chartWidth / (data.labels.length - 1);
+
+            // Background
+            svg.appendChild(createSVGElement('rect', { width, height, fill: '#ffffff' }));
+
+            // Title
+            if (data.title) {
+                const title = createSVGElement('text', {
+                    x: width / 2,
+                    y: padding / 2,
+                    'text-anchor': 'middle',
+                    'font-size': '20',
+                    'font-weight': 'bold',
+                    fill: '#495057'
+                });
+                title.textContent = data.title;
+                svg.appendChild(title);
+            }
+
+            // Grid
+            if (showGrid) {
+                for (let i = 0; i <= 5; i++) {
+                    const y = padding + (chartHeight / 5) * i;
+                    svg.appendChild(createSVGElement('line', {
+                        x1: padding, y1: y, x2: width - padding, y2: y,
+                        stroke: '#e9ecef', 'stroke-width': '1'
+                    }));
+                }
+            }
+
+            // Create area path
+            let pathData = `M ${padding} ${padding + chartHeight}`;
+            
+            data.values.forEach((value, i) => {
+                const x = padding + i * spacing;
+                const y = padding + chartHeight - (value / maxValue * chartHeight);
+                pathData += ` L ${x} ${y}`;
+            });
+
+            pathData += ` L ${padding + (data.labels.length - 1) * spacing} ${padding + chartHeight} Z`;
+
+            // Gradient
+            const gradient = createSVGElement('linearGradient', {
+                id: 'areaGradient',
+                x1: '0%',
+                y1: '0%',
+                x2: '0%',
+                y2: '100%'
+            });
+            gradient.innerHTML = `
+                <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:0.8" />
+                <stop offset="100%" style="stop-color:${primaryColor};stop-opacity:0.1" />
+            `;
+            svg.appendChild(gradient);
+
+            // Area
+            const area = createSVGElement('path', {
+                d: pathData,
+                fill: 'url(#areaGradient)',
+                stroke: primaryColor,
+                'stroke-width': '2'
+            });
+
+            if (enableAnimation) {
+                area.style.opacity = '0';
+                setTimeout(() => {
+                    area.style.opacity = '1';
+                    area.style.transition = `opacity ${animSpeed}ms`;
+                }, 100);
+            }
+
+            svg.appendChild(area);
+
+            // Points and labels
+            data.values.forEach((value, i) => {
+                const x = padding + i * spacing;
+                const y = padding + chartHeight - (value / maxValue * chartHeight);
+
+                const circle = createSVGElement('circle', {
+                    cx: x,
+                    cy: y,
+                    r: '4',
+                    fill: primaryColor,
+                    stroke: 'white',
+                    'stroke-width': '2'
+                });
+
+                circle.addEventListener('mouseenter', (e) => showTooltip(e, `${data.labels[i]}: ${value}`));
+                circle.addEventListener('mouseleave', hideTooltip);
+
+                svg.appendChild(circle);
+
+                if (showLabels) {
+                    const label = createSVGElement('text', {
+                        x: x,
+                        y: padding + chartHeight + 20,
+                        'text-anchor': 'middle',
+                        'font-size': '12',
+                        fill: '#495057'
+                    });
+                    label.textContent = data.labels[i];
+                    svg.appendChild(label);
+                }
+            });
+        }
+
+        // Donut Chart
+        function renderDonutChart(svg, data, config) {
+            const width = 900;
+            const height = 500;
+            const { primaryColor, secondaryColor, showLabels } = config;
+
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const outerRadius = Math.min(width, height) / 3;
+            const innerRadius = outerRadius * 0.6;
+
+            // Background
+            svg.appendChild(createSVGElement('rect', { width, height, fill: '#ffffff' }));
+
+            // Title
+            if (data.title) {
+                const title = createSVGElement('text', {
+                    x: width / 2,
+                    y: 30,
+                    'text-anchor': 'middle',
+                    'font-size': '20',
+                    'font-weight': 'bold',
+                    fill: '#495057'
+                });
+                title.textContent = data.title;
+                svg.appendChild(title);
+            }
+
+            const total = data.values.reduce((a, b) => a + b, 0);
+            let currentAngle = -Math.PI / 2;
+
+            const colors = generateColorGradient(primaryColor, secondaryColor, data.values.length);
+
+            data.values.forEach((value, i) => {
+                const angle = (value / total) * Math.PI * 2;
+                const endAngle = currentAngle + angle;
+
+                const x1Outer = centerX + outerRadius * Math.cos(currentAngle);
+                const y1Outer = centerY + outerRadius * Math.sin(currentAngle);
+                const x2Outer = centerX + outerRadius * Math.cos(endAngle);
+                const y2Outer = centerY + outerRadius * Math.sin(endAngle);
+
+                const x1Inner = centerX + innerRadius * Math.cos(currentAngle);
+                const y1Inner = centerY + innerRadius * Math.sin(currentAngle);
+                const x2Inner = centerX + innerRadius * Math.cos(endAngle);
+                const y2Inner = centerY + innerRadius * Math.sin(endAngle);
+
+                const largeArc = angle > Math.PI ? 1 : 0;
+
+                const pathData = [
+                    `M ${x1Outer} ${y1Outer}`,
+                    `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2Outer} ${y2Outer}`,
+                    `L ${x2Inner} ${y2Inner}`,
+                    `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x1Inner} ${y1Inner}`,
+                    'Z'
+                ].join(' ');
+
+                const path = createSVGElement('path', {
+                    d: pathData,
+                    fill: colors[i],
+                    stroke: 'white',
+                    'stroke-width': '2'
+                });
+
+                path.addEventListener('mouseenter', (e) => {
+                    path.style.opacity = '0.8';
+                    const percent = ((value / total) * 100).toFixed(1);
+                    showTooltip(e, `${data.labels[i]}: ${value} (${percent}%)`);
+                });
+                path.addEventListener('mouseleave', (e) => {
+                    path.style.opacity = '1';
+                    hideTooltip();
+                });
+
+                svg.appendChild(path);
+
+                // Labels
+                if (showLabels) {
+                    const midAngle = currentAngle + angle / 2;
+                    const labelRadius = outerRadius + 40;
+                    const labelX = centerX + labelRadius * Math.cos(midAngle);
+                    const labelY = centerY + labelRadius * Math.sin(midAngle);
+
+                    const label = createSVGElement('text', {
+                        x: labelX,
+                        y: labelY,
+                        'text-anchor': 'middle',
+                        'font-size': '12',
+                        fill: '#495057',
+                        'font-weight': 'bold'
+                    });
+                    label.textContent = data.labels[i];
+                    svg.appendChild(label);
+                }
+
+                currentAngle = endAngle;
+            });
+
+            // Center text
+            const centerTotal = createSVGElement('text', {
+                x: centerX,
+                y: centerY,
+                'text-anchor': 'middle',
+                'font-size': '24',
+                'font-weight': 'bold',
+                fill: '#495057'
+            });
+            centerTotal.textContent = total;
+            svg.appendChild(centerTotal);
+
+            const centerLabel = createSVGElement('text', {
+                x: centerX,
+                y: centerY + 20,
+                'text-anchor': 'middle',
+                'font-size': '14',
+                fill: '#6c757d'
+            });
+            centerLabel.textContent = 'Total';
+            svg.appendChild(centerLabel);
+        }
+
+        // Radar Chart
+        function renderRadarChart(svg, data, config) {
+            const width = 900;
+            const height = 500;
+            const { primaryColor, showLabels } = config;
+
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) / 3;
+
+            // Background
+            svg.appendChild(createSVGElement('rect', { width, height, fill: '#ffffff' }));
+
+            // Title
+            if (data.title) {
+                const title = createSVGElement('text', {
+                    x: width / 2,
+                    y: 30,
+                    'text-anchor': 'middle',
+                    'font-size': '20',
+                    'font-weight': 'bold',
+                    fill: '#495057'
+                });
+                title.textContent = data.title;
+                svg.appendChild(title);
+            }
+
+            const maxValue = Math.max(...data.values, 100);
+            const levels = 5;
+            const angleStep = (Math.PI * 2) / data.labels.length;
+
+            // Draw levels (circles)
+            for (let i = 1; i <= levels; i++) {
+                const levelRadius = (radius / levels) * i;
+                const circle = createSVGElement('circle', {
+                    cx: centerX,
+                    cy: centerY,
+                    r: levelRadius,
+                    fill: 'none',
+                    stroke: '#e9ecef',
+                    'stroke-width': '1'
+                });
+                svg.appendChild(circle);
+            }
+
+            // Draw axes
+            data.labels.forEach((label, i) => {
+                const angle = angleStep * i - Math.PI / 2;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+
+                const line = createSVGElement('line', {
+                    x1: centerX,
+                    y1: centerY,
+                    x2: x,
+                    y2: y,
+                    stroke: '#dee2e6',
+                    'stroke-width': '1'
+                });
+                svg.appendChild(line);
+
+                if (showLabels) {
+                    const labelRadius = radius + 30;
+                    const labelX = centerX + labelRadius * Math.cos(angle);
+                    const labelY = centerY + labelRadius * Math.sin(angle);
+
+                    const text = createSVGElement('text', {
+                        x: labelX,
+                        y: labelY,
+                        'text-anchor': 'middle',
+                        'font-size': '13',
+                        'font-weight': 'bold',
+                        fill: '#495057'
+                    });
+                    text.textContent = label;
+                    svg.appendChild(text);
+                }
+            });
+
+            // Draw data polygon
+            let pathData = '';
+            const points = [];
+
+            data.values.forEach((value, i) => {
+                const angle = angleStep * i - Math.PI / 2;
+                const r = (value / maxValue) * radius;
+                const x = centerX + r * Math.cos(angle);
+                const y = centerY + r * Math.sin(angle);
+                points.push({ x, y });
+
+                if (i === 0) {
+                    pathData += `M ${x} ${y}`;
+                } else {
+                    pathData += ` L ${x} ${y}`;
+                }
+            });
+            pathData += ' Z';
+
+            const polygon = createSVGElement('path', {
+                d: pathData,
+                fill: primaryColor,
+                'fill-opacity': '0.3',
+                stroke: primaryColor,
+                'stroke-width': '3',
+                'stroke-linejoin': 'round'
+            });
+            svg.appendChild(polygon);
+
+            // Draw points
+            points.forEach((point, i) => {
+                const circle = createSVGElement('circle', {
+                    cx: point.x,
+                    cy: point.y,
+                    r: '5',
+                    fill: primaryColor,
+                    stroke: 'white',
+                    'stroke-width': '2'
+                });
+
+                circle.addEventListener('mouseenter', (e) => {
+                    showTooltip(e, `${data.labels[i]}: ${data.values[i]}`);
+                });
+                circle.addEventListener('mouseleave', hideTooltip);
+
+                svg.appendChild(circle);
+            });
+        }
+
+        // Helper functions
+        function createSVGElement(type, attrs) {
+            const element = document.createElementNS('http://www.w3.org/2000/svg', type);
+            for (let key in attrs) {
+                element.setAttribute(key, attrs[key]);
+            }
+            return element;
+        }
+
+        function generateColorGradient(color1, color2, steps) {
+            const c1 = hexToRgb(color1);
+            const c2 = hexToRgb(color2);
+            const colors = [];
+
+            for (let i = 0; i < steps; i++) {
+                const ratio = i / (steps - 1);
+                const r = Math.round(c1.r + (c2.r - c1.r) * ratio);
+                const g = Math.round(c1.g + (c2.g - c1.g) * ratio);
+                const b = Math.round(c1.b + (c2.b - c1.b) * ratio);
+                colors.push(`rgb(${r}, ${g}, ${b})`);
+            }
+
+            return colors;
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        function showTooltip(event, text) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.textContent = text;
+            tooltip.style.left = event.pageX + 10 + 'px';
+            tooltip.style.top = event.pageY + 10 + 'px';
+            tooltip.classList.add('visible');
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').classList.remove('visible');
+        }
+
+        // Download SVG
+        function downloadSVG() {
+            const svg = document.getElementById('svgCanvas');
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svg);
+            const blob = new Blob([svgString], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chart-' + Date.now() + '.svg';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Copy to clipboard
+        function copyToClipboard() {
+            const svg = document.getElementById('svgCanvas');
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svg);
+            
+            navigator.clipboard.writeText(svgString).then(() => {
+                alert('SVG 코드가 클립보드에 복사되었습니다!');
+            });
+        }
+
+        // Regenerate chart
+        function regenerateChart() {
+            if (currentData) {
+                generateChart();
+            }
+        }
+
+        // Auto-update on style change
+        document.querySelectorAll('input[type="color"], input[type="range"], input[type="checkbox"]').forEach(input => {
+            input.addEventListener('change', () => {
+                if (currentData) {
+                    generateChart();
+                }
+            });
+        });
+
+        document.getElementById('chartType').addEventListener('change', () => {
+            if (currentData) {
+                generateChart();
+            }
+        });
+
+        // Load initial sample
+        window.addEventListener('load', () => {
+            loadSample('sales');
+        });
+    </script>
+</body>
+</html>

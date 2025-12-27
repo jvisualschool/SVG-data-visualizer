@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Data Visualizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <svg id="logoIcon" style="cursor: pointer;" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 3v18h18" />
+                    <path d="M18 17V9" />
+                    <path d="M13 17V5" />
+                    <path d="M8 17v-3" />
+                </svg>
+                <span>SVG Visualizer</span>
+            </div>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="upload"><span class="step-num">1</span> 데이터</button>
+                <button class="nav-tab" data-tab="chart"><span class="step-num">2</span> 차트</button>
+                <button class="nav-tab" data-tab="style"><span class="step-num">3</span> 스타일</button>
+                <button class="nav-tab" data-tab="animation"><span class="step-num">4</span> 애니메이션</button>
+            </nav>
+            <div class="header-actions">
+                <button class="btn-icon" id="toggleTheme" title="테마 변경">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+                <button class="btn-primary" id="downloadSVG">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    SVG 다운로드
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Left Panel - Controls -->
+            <aside class="control-panel">
+                <!-- Data Upload Tab -->
+                <div class="tab-content active" id="tab-upload">
+                    <div class="panel-section">
+                        <h3>데이터 업로드</h3>
+                        <div class="upload-zone" id="dropZone">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            <p>JSON 또는 CSV 파일을 드래그하거나</p>
+                            <label class="btn-secondary">
+                                파일 선택
+                                <input type="file" id="fileInput" accept=".json,.csv" hidden>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h3>샘플 데이터</h3>
+                        <div class="sample-grid">
+                            <button class="sample-btn" data-sample="sales">
+                                <svg class="sample-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 3v18h18" />
+                                    <path d="M18 17V9" />
+                                    <path d="M13 17V5" />
+                                    <path d="M8 17v-3" />
+                                </svg>
+                                <span>월별 매출</span>
+                            </button>
+                            <button class="sample-btn" data-sample="population">
+                                <svg class="sample-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
+                                <span>인구 통계</span>
+                            </button>
+                            <button class="sample-btn" data-sample="temperature">
+                                <svg class="sample-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
+                                </svg>
+                                <span>기온 변화</span>
+                            </button>
+                            <button class="sample-btn" data-sample="categories">
+                                <svg class="sample-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                                    <path d="M22 12A10 10 0 0 0 12 2v10z" />
+                                </svg>
+                                <span>카테고리 비율</span>
+                            </button>
+                            <button class="sample-btn" data-sample="scatter">
+                                <svg class="sample-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                                    <path d="M5 3v4" />
+                                    <path d="M19 17v4" />
+                                    <path d="M3 5h4" />
+                                    <path d="M17 19h4" />
+                                </svg>
+                                <span>산점도 데이터</span>
+                            </button>
+                            <button class="sample-btn" data-sample="stocks">
+                                <svg class="sample-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                                    <polyline points="16 7 22 7 22 13" />
+                                </svg>
+                                <span>주식 데이터</span>
+                            </button>
+                            <button class="sample-btn" data-sample="radar">
+                                <svg class="sample-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <circle cx="12" cy="12" r="6" />
+                                    <circle cx="12" cy="12" r="2" />
+                                </svg>
+                                <span>능력치 레이더</span>
+                            </button>
+                            <button class="sample-btn" data-sample="treemap">
+                                <svg class="sample-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="7" height="7" x="3" y="3" rx="1" />
+                                    <rect width="7" height="7" x="14" y="3" rx="1" />
+                                    <rect width="7" height="7" x="14" y="14" rx="1" />
+                                    <rect width="7" height="7" x="3" y="14" rx="1" />
+                                </svg>
+                                <span>트리맵 데이터</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h3>데이터 미리보기</h3>
+                        <div class="data-preview" id="dataPreview">
+                            <p class="placeholder-text">데이터를 업로드하거나 샘플을 선택하세요</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Type Tab -->
+                <div class="tab-content" id="tab-chart">
+                    <div class="panel-section">
+                        <h3>차트 유형</h3>
+                        <div class="chart-type-grid">
+                            <button class="chart-type-btn active" data-chart="bar">
+                                <svg viewBox="0 0 40 40">
+                                    <rect x="4" y="20" width="8" height="16" fill="currentColor" opacity="0.6" />
+                                    <rect x="16" y="10" width="8" height="26" fill="currentColor" opacity="0.8" />
+                                    <rect x="28" y="4" width="8" height="32" fill="currentColor" />
+                                </svg>
+                                <span>막대</span>
+                            </button>
+                            <button class="chart-type-btn" data-chart="line">
+                                <svg viewBox="0 0 40 40">
+                                    <polyline points="4,30 14,18 24,24 36,8" fill="none" stroke="currentColor"
+                                        stroke-width="2" />
+                                    <circle cx="4" cy="30" r="2" fill="currentColor" />
+                                    <circle cx="14" cy="18" r="2" fill="currentColor" />
+                                    <circle cx="24" cy="24" r="2" fill="currentColor" />
+                                    <circle cx="36" cy="8" r="2" fill="currentColor" />
+                                </svg>
+                                <span>선</span>
+                            </button>
+                            <button class="chart-type-btn" data-chart="area">
+                                <svg viewBox="0 0 40 40">
+                                    <path d="M4,36 L4,30 L14,18 L24,24 L36,8 L36,36 Z" fill="currentColor"
+                                        opacity="0.3" />
+                                    <polyline points="4,30 14,18 24,24 36,8" fill="none" stroke="currentColor"
+                                        stroke-width="2" />
+                                </svg>
+                                <span>영역</span>
+                            </button>
+                            <button class="chart-type-btn" data-chart="pie">
+                                <svg viewBox="0 0 40 40">
+                                    <path d="M20,20 L20,4 A16,16 0 0,1 34,14 Z" fill="currentColor" />
+                                    <path d="M20,20 L34,14 A16,16 0 0,1 28,34 Z" fill="currentColor" opacity="0.7" />
+                                    <path d="M20,20 L28,34 A16,16 0 1,1 20,4 Z" fill="currentColor" opacity="0.4" />
+                                </svg>
+                                <span>파이</span>
+                            </button>
+                            <button class="chart-type-btn" data-chart="donut">
+                                <svg viewBox="0 0 40 40">
+                                    <circle cx="20" cy="20" r="14" fill="none" stroke="currentColor" stroke-width="6"
+                                        stroke-dasharray="30 58" stroke-dashoffset="0" />
+                                    <circle cx="20" cy="20" r="14" fill="none" stroke="currentColor" stroke-width="6"
+                                        stroke-dasharray="20 68" stroke-dashoffset="-30" opacity="0.7" />
+                                    <circle cx="20" cy="20" r="14" fill="none" stroke="currentColor" stroke-width="6"
+                                        stroke-dasharray="38 50" stroke-dashoffset="-50" opacity="0.4" />
+                                </svg>
+                                <span>도넛</span>
+                            </button>
+                            <button class="chart-type-btn" data-chart="scatter">
+                                <svg viewBox="0 0 40 40">
+                                    <circle cx="8" cy="28" r="3" fill="currentColor" opacity="0.6" />
+                                    <circle cx="15" cy="20" r="4" fill="currentColor" opacity="0.8" />
+                                    <circle cx="25" cy="15" r="3" fill="currentColor" opacity="0.7" />
+                                    <circle cx="32" cy="10" r="5" fill="currentColor" />
+                                    <circle cx="20" cy="30" r="2" fill="currentColor" opacity="0.5" />
+                                </svg>
+                                <span>산점도</span>
+                            </button>
+                            <button class="chart-type-btn" data-chart="radar">
+                                <svg viewBox="0 0 40 40">
+                                    <polygon points="20,4 36,14 32,32 8,32 4,14" fill="none" stroke="currentColor"
+                                        stroke-width="1" opacity="0.3" />
+                                    <polygon points="20,10 30,16 27,28 13,28 10,16" fill="currentColor" opacity="0.3"
+                                        stroke="currentColor" stroke-width="1.5" />
+                                </svg>
+                                <span>레이더</span>
+                            </button>
+                            <button class="chart-type-btn" data-chart="horizontal">
+                                <svg viewBox="0 0 40 40">
+                                    <rect x="4" y="6" width="28" height="6" fill="currentColor" />
+                                    <rect x="4" y="17" width="20" height="6" fill="currentColor" opacity="0.7" />
+                                    <rect x="4" y="28" width="32" height="6" fill="currentColor" opacity="0.5" />
+                                </svg>
+                                <span>가로 막대</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h3>데이터 매핑</h3>
+                        <div class="form-group">
+                            <label>X축 / 라벨 필드</label>
+                            <select id="xField" class="form-select">
+                                <option value="">필드 선택</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Y축 / 값 필드</label>
+                            <select id="yField" class="form-select">
+                                <option value="">필드 선택</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="sizeFieldGroup" style="display:none;">
+                            <label>크기 필드 (산점도)</label>
+                            <select id="sizeField" class="form-select">
+                                <option value="">필드 선택</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h3>차트 설정</h3>
+                        <div class="form-group">
+                            <label>차트 제목</label>
+                            <input type="text" id="chartTitle" class="form-input" placeholder="차트 제목 입력">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>너비</label>
+                                <input type="number" id="chartWidth" class="form-input" value="800" min="200"
+                                    max="2000">
+                            </div>
+                            <div class="form-group">
+                                <label>높이</label>
+                                <input type="number" id="chartHeight" class="form-input" value="500" min="200"
+                                    max="1500">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="showGrid" checked>
+                                <span class="checkmark"></span>
+                                그리드 표시
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="showLegend" checked>
+                                <span class="checkmark"></span>
+                                범례 표시
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="showValues">
+                                <span class="checkmark"></span>
+                                값 라벨 표시
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Style Tab -->
+                <div class="tab-content" id="tab-style">
+                    <div class="panel-section">
+                        <h3>컬러 팔레트</h3>
+                        <div class="palette-grid">
+                            <button class="palette-btn active" data-palette="vibrant">
+                                <div class="palette-preview">
+                                    <span style="background:#FF6B6B"></span>
+                                    <span style="background:#4ECDC4"></span>
+                                    <span style="background:#45B7D1"></span>
+                                    <span style="background:#96CEB4"></span>
+                                    <span style="background:#FFEAA7"></span>
+                                </div>
+                                <span>Vibrant</span>
+                            </button>
+                            <button class="palette-btn" data-palette="ocean">
+                                <div class="palette-preview">
+                                    <span style="background:#0077B6"></span>
+                                    <span style="background:#00B4D8"></span>
+                                    <span style="background:#90E0EF"></span>
+                                    <span style="background:#CAF0F8"></span>
+                                    <span style="background:#03045E"></span>
+                                </div>
+                                <span>Ocean</span>
+                            </button>
+                            <button class="palette-btn" data-palette="sunset">
+                                <div class="palette-preview">
+                                    <span style="background:#F94144"></span>
+                                    <span style="background:#F3722C"></span>
+                                    <span style="background:#F8961E"></span>
+                                    <span style="background:#F9C74F"></span>
+                                    <span style="background:#90BE6D"></span>
+                                </div>
+                                <span>Sunset</span>
+                            </button>
+                            <button class="palette-btn" data-palette="forest">
+                                <div class="palette-preview">
+                                    <span style="background:#2D6A4F"></span>
+                                    <span style="background:#40916C"></span>
+                                    <span style="background:#52B788"></span>
+                                    <span style="background:#74C69D"></span>
+                                    <span style="background:#95D5B2"></span>
+                                </div>
+                                <span>Forest</span>
+                            </button>
+                            <button class="palette-btn" data-palette="neon">
+                                <div class="palette-preview">
+                                    <span style="background:#FF00FF"></span>
+                                    <span style="background:#00FFFF"></span>
+                                    <span style="background:#FFFF00"></span>
+                                    <span style="background:#FF0080"></span>
+                                    <span style="background:#80FF00"></span>
+                                </div>
+                                <span>Neon</span>
+                            </button>
+                            <button class="palette-btn" data-palette="pastel">
+                                <div class="palette-preview">
+                                    <span style="background:#FFB5BA"></span>
+                                    <span style="background:#FFDAC1"></span>
+                                    <span style="background:#E2F0CB"></span>
+                                    <span style="background:#B5EAD7"></span>
+                                    <span style="background:#C7CEEA"></span>
+                                </div>
+                                <span>Pastel</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h3>배경</h3>
+                        <div class="form-group">
+                            <label>배경 색상</label>
+                            <div class="color-input-group">
+                                <input type="color" id="bgColor" value="#1a1a2e">
+                                <input type="text" id="bgColorText" class="form-input" value="#1a1a2e">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="transparentBg">
+                                <span class="checkmark"></span>
+                                투명 배경
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h3>폰트</h3>
+                        <div class="form-group">
+                            <label>폰트 패밀리</label>
+                            <select id="fontFamily" class="form-select">
+                                <option value="Outfit">Outfit</option>
+                                <option value="JetBrains Mono">JetBrains Mono</option>
+                                <option value="Arial">Arial</option>
+                                <option value="Georgia">Georgia</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>텍스트 색상</label>
+                            <div class="color-input-group">
+                                <input type="color" id="textColor" value="#ffffff">
+                                <input type="text" id="textColorText" class="form-input" value="#ffffff">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h3>테두리 & 그림자</h3>
+                        <div class="form-group">
+                            <label>막대/선 둥글기: <span id="radiusValue">4</span>px</label>
+                            <input type="range" id="borderRadius" class="form-range" min="0" max="20" value="4">
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="showShadow">
+                                <span class="checkmark"></span>
+                                그림자 효과
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Animation Tab -->
+                <div class="tab-content" id="tab-animation">
+                    <div class="panel-section">
+                        <h3>애니메이션 유형</h3>
+                        <div class="animation-grid">
+                            <button class="animation-btn active" data-animation="none">
+                                <svg viewBox="0 0 40 40">
+                                    <line x1="8" y1="8" x2="32" y2="32" stroke="currentColor" stroke-width="2" />
+                                    <line x1="32" y1="8" x2="8" y2="32" stroke="currentColor" stroke-width="2" />
+                                </svg>
+                                <span>없음</span>
+                            </button>
+                            <button class="animation-btn" data-animation="fadeIn">
+                                <svg viewBox="0 0 40 40">
+                                    <circle cx="20" cy="20" r="12" fill="currentColor" opacity="0.3" />
+                                    <circle cx="20" cy="20" r="8" fill="currentColor" opacity="0.6" />
+                                    <circle cx="20" cy="20" r="4" fill="currentColor" />
+                                </svg>
+                                <span>페이드인</span>
+                            </button>
+                            <button class="animation-btn" data-animation="slideUp">
+                                <svg viewBox="0 0 40 40">
+                                    <rect x="12" y="28" width="16" height="4" fill="currentColor" opacity="0.3" />
+                                    <rect x="12" y="20" width="16" height="4" fill="currentColor" opacity="0.6" />
+                                    <rect x="12" y="8" width="16" height="8" fill="currentColor" />
+                                    <path d="M20 4 L26 12 L14 12 Z" fill="currentColor" />
+                                </svg>
+                                <span>슬라이드업</span>
+                            </button>
+                            <button class="animation-btn" data-animation="scale">
+                                <svg viewBox="0 0 40 40">
+                                    <rect x="14" y="14" width="12" height="12" fill="currentColor" opacity="0.3" />
+                                    <rect x="10" y="10" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="1.5" />
+                                    <path d="M8 4 L4 4 L4 8" stroke="currentColor" stroke-width="2" fill="none" />
+                                    <path d="M32 4 L36 4 L36 8" stroke="currentColor" stroke-width="2" fill="none" />
+                                    <path d="M8 36 L4 36 L4 32" stroke="currentColor" stroke-width="2" fill="none" />
+                                    <path d="M32 36 L36 36 L36 32" stroke="currentColor" stroke-width="2" fill="none" />
+                                </svg>
+                                <span>스케일</span>
+                            </button>
+                            <button class="animation-btn" data-animation="stagger">
+                                <svg viewBox="0 0 40 40">
+                                    <rect x="4" y="28" width="6" height="8" fill="currentColor" opacity="0.4" />
+                                    <rect x="13" y="22" width="6" height="14" fill="currentColor" opacity="0.6" />
+                                    <rect x="22" y="14" width="6" height="22" fill="currentColor" opacity="0.8" />
+                                    <rect x="31" y="6" width="6" height="30" fill="currentColor" />
+                                </svg>
+                                <span>순차적</span>
+                            </button>
+                            <button class="animation-btn" data-animation="draw">
+                                <svg viewBox="0 0 40 40">
+                                    <polyline points="4,32 14,18 24,24 36,8" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-dasharray="60" />
+                                </svg>
+                                <span>드로잉</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h3>애니메이션 설정</h3>
+                        <div class="form-group">
+                            <label>지속 시간: <span id="durationValue">800</span>ms</label>
+                            <input type="range" id="animationDuration" class="form-range" min="200" max="3000"
+                                value="800" step="100">
+                        </div>
+                        <div class="form-group">
+                            <label>딜레이: <span id="delayValue">0</span>ms</label>
+                            <input type="range" id="animationDelay" class="form-range" min="0" max="1000" value="0"
+                                step="50">
+                        </div>
+                        <div class="form-group">
+                            <label>이징 함수</label>
+                            <select id="easingFunction" class="form-select">
+                                <option value="ease">Ease</option>
+                                <option value="ease-in">Ease In</option>
+                                <option value="ease-out">Ease Out</option>
+                                <option value="ease-in-out">Ease In Out</option>
+                                <option value="linear">Linear</option>
+                                <option value="cubic-bezier(0.68, -0.55, 0.265, 1.55)">Bounce</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h3>인터랙션</h3>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableHover" checked>
+                                <span class="checkmark"></span>
+                                호버 효과
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableTooltip" checked>
+                                <span class="checkmark"></span>
+                                툴팁 표시
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableClick">
+                                <span class="checkmark"></span>
+                                클릭 하이라이트
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <button class="btn-secondary full-width" id="replayAnimation">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M1 4v6h6" />
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                            </svg>
+                            애니메이션 다시 재생
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Chart Preview Area -->
+            <section class="chart-area">
+                <div class="chart-container" id="chartContainer">
+                    <div class="chart-placeholder">
+                        <svg class="placeholder-icon" width="80" height="80" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3v18h18" />
+                            <path d="M18 17V9" />
+                            <path d="M13 17V5" />
+                            <path d="M8 17v-3" />
+                        </svg>
+                        <h2>차트를 생성하세요</h2>
+                        <p>데이터를 업로드하거나 샘플을 선택하면<br>여기에 시각화가 표시됩니다</p>
+                    </div>
+                </div>
+
+                <!-- Tooltip -->
+                <div class="tooltip" id="tooltip"></div>
+            </section>
+        </main>
+    </div>
+
+
+    <!-- Splash Modal -->
+    <div class="modal-overlay" id="splashModal">
+        <div class="splash-content">
+            <button class="modal-close" id="closeSplash">&times;</button>
+            <div class="splash-header">
+                <h1>SVG Data Visualizer</h1>
+                <p class="subtitle">Interactive data visualization tool with pure JavaScript</p>
+            </div>
+            <div class="splash-footer">
+                <div class="splash-info-line">
+                    <span class="tech-tag">HTML5</span>
+                    <span class="tech-tag">CSS3</span>
+                    <span class="tech-tag">JavaScript</span>
+                    <span class="tech-tag">D3.js</span>
+                    <span class="divider">|</span>
+                    <span>Developer: <a href="mailto:jvisualschool@gmail.com">Jinho Jung</a></span>
+                    <span class="divider">|</span>
+                    <span>2026</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
