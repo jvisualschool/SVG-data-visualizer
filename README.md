@@ -4,8 +4,6 @@
 
 🔗 **라이브 데모**: [https://jvibeschool.org/DATASVG/](https://jvibeschool.org/DATASVG/)
 
-![SVG Visualizer Splash](splash.jpg)
-
 ## ✨ 주요 기능
 
 ### 1. 📂 데이터 업로드 및 관리
